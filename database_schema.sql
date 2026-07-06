@@ -1,13 +1,15 @@
 -- ============================================================
 -- ZAIKA LOUNGE - COMPLETE DATABASE SCHEMA (MySQL 5.7+/8.0+)
 -- For Hostinger phpMyAdmin import
+-- All foreign keys added at the end via ALTER TABLE to avoid
+-- errno 150 "Foreign key constraint is incorrectly formed"
 -- ============================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
 SET sql_mode = '';
 
 -- ============================================================
--- BASE TABLES (V1)
+-- BASE TABLES (V1) — no inline FK constraints
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS `categories` (
@@ -63,8 +65,7 @@ CREATE TABLE IF NOT EXISTS `addresses` (
   `latitude` DECIMAL(10,7),
   `longitude` DECIMAL(10,7),
   `is_default` TINYINT(1) DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE CASCADE
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `products` (
@@ -89,8 +90,7 @@ CREATE TABLE IF NOT EXISTS `products` (
   `stock_status` ENUM('in_stock','out_of_stock') DEFAULT 'in_stock',
   `is_active` TINYINT(1) DEFAULT 1,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON DELETE CASCADE
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `delivery_zones` (
@@ -157,9 +157,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `confirmed_at` TIMESTAMP NULL,
   `delivered_at` TIMESTAMP NULL,
   `cancelled_at` TIMESTAMP NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`),
-  FOREIGN KEY (`address_id`) REFERENCES `addresses`(`id`) ON DELETE SET NULL
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `order_items` (
@@ -171,9 +169,7 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   `quantity` INT NOT NULL,
   `unit_price` DECIMAL(10,2) NOT NULL,
   `total_price` DECIMAL(10,2) NOT NULL,
-  `happy_hour_discount` DECIMAL(10,2) DEFAULT 0.00,
-  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`product_id`) REFERENCES `products`(`id`)
+  `happy_hour_discount` DECIMAL(10,2) DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `payments` (
@@ -187,9 +183,7 @@ CREATE TABLE IF NOT EXISTS `payments` (
   `currency` VARCHAR(10) DEFAULT 'INR',
   `status` VARCHAR(50) DEFAULT 'pending',
   `gateway_response` TEXT,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE SET NULL,
-  FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE SET NULL
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `banners` (
@@ -214,10 +208,7 @@ CREATE TABLE IF NOT EXISTS `reviews` (
   `rating` INT NOT NULL DEFAULT 5,
   `comment` TEXT,
   `is_approved` TINYINT(1) DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE SET NULL
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `wishlist` (
@@ -225,9 +216,7 @@ CREATE TABLE IF NOT EXISTS `wishlist` (
   `customer_id` INT NOT NULL,
   `product_id` INT NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY `uniq_customer_product` (`customer_id`, `product_id`),
-  FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE CASCADE
+  UNIQUE KEY `uniq_customer_product` (`customer_id`, `product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `settings` (
@@ -256,7 +245,7 @@ CREATE TABLE IF NOT EXISTS `uploads` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- V3 TABLES
+-- V3 TABLES — no inline FK constraints
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS `wallet_transactions` (
@@ -268,8 +257,7 @@ CREATE TABLE IF NOT EXISTS `wallet_transactions` (
   `source_id` VARCHAR(100),
   `balance_after` DECIMAL(10,2) DEFAULT 0.00,
   `description` VARCHAR(500),
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE CASCADE
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `loyalty_points` (
@@ -280,8 +268,7 @@ CREATE TABLE IF NOT EXISTS `loyalty_points` (
   `source` VARCHAR(50) DEFAULT 'order',
   `source_id` VARCHAR(100),
   `description` VARCHAR(500),
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE CASCADE
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `referrals` (
@@ -290,9 +277,7 @@ CREATE TABLE IF NOT EXISTS `referrals` (
   `referred_customer_id` INT,
   `referral_code` VARCHAR(20) UNIQUE,
   `reward_given` TINYINT(1) DEFAULT 0,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`referrer_customer_id`) REFERENCES `customers`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`referred_customer_id`) REFERENCES `customers`(`id`) ON DELETE SET NULL
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `flash_deals` (
@@ -305,8 +290,7 @@ CREATE TABLE IF NOT EXISTS `flash_deals` (
   `max_quantity` INT DEFAULT 0,
   `sold_count` INT DEFAULT 0,
   `is_active` TINYINT(1) DEFAULT 1,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE CASCADE
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `happy_hours` (
@@ -351,8 +335,7 @@ CREATE TABLE IF NOT EXISTS `attendance` (
   `check_in` TIME,
   `check_out` TIME,
   `notes` TEXT,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`employee_id`) REFERENCES `employees`(`id`) ON DELETE CASCADE
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `leave_requests` (
@@ -363,8 +346,7 @@ CREATE TABLE IF NOT EXISTS `leave_requests` (
   `reason` TEXT,
   `status` ENUM('pending','approved','rejected') DEFAULT 'pending',
   `approved_by` INT,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`employee_id`) REFERENCES `employees`(`id`) ON DELETE CASCADE
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `suppliers` (
@@ -388,8 +370,7 @@ CREATE TABLE IF NOT EXISTS `inventory_items` (
   `cost_per_unit` DECIMAL(10,2) DEFAULT 0.00,
   `supplier_id` INT,
   `is_active` TINYINT(1) DEFAULT 1,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`supplier_id`) REFERENCES `suppliers`(`id`) ON DELETE SET NULL
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `inventory_transactions` (
@@ -400,8 +381,7 @@ CREATE TABLE IF NOT EXISTS `inventory_transactions` (
   `unit_cost` DECIMAL(10,2),
   `notes` TEXT,
   `created_by` INT,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`item_id`) REFERENCES `inventory_items`(`id`) ON DELETE CASCADE
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `notifications` (
@@ -454,6 +434,33 @@ CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
   `expires_at` TIMESTAMP NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- FOREIGN KEYS (added after all tables exist)
+-- ============================================================
+
+ALTER TABLE `addresses`         ADD CONSTRAINT `fk_addr_customer`    FOREIGN KEY (`customer_id`)           REFERENCES `customers`(`id`) ON DELETE CASCADE;
+ALTER TABLE `products`          ADD CONSTRAINT `fk_prod_category`    FOREIGN KEY (`category_id`)            REFERENCES `categories`(`id`) ON DELETE CASCADE;
+ALTER TABLE `orders`           ADD CONSTRAINT `fk_order_customer`   FOREIGN KEY (`customer_id`)            REFERENCES `customers`(`id`);
+ALTER TABLE `orders`           ADD CONSTRAINT `fk_order_address`    FOREIGN KEY (`address_id`)             REFERENCES `addresses`(`id`) ON DELETE SET NULL;
+ALTER TABLE `order_items`      ADD CONSTRAINT `fk_oi_order`          FOREIGN KEY (`order_id`)               REFERENCES `orders`(`id`) ON DELETE CASCADE;
+ALTER TABLE `order_items`      ADD CONSTRAINT `fk_oi_product`        FOREIGN KEY (`product_id`)             REFERENCES `products`(`id`);
+ALTER TABLE `payments`         ADD CONSTRAINT `fk_pay_order`        FOREIGN KEY (`order_id`)               REFERENCES `orders`(`id`) ON DELETE SET NULL;
+ALTER TABLE `payments`         ADD CONSTRAINT `fk_pay_customer`      FOREIGN KEY (`customer_id`)            REFERENCES `customers`(`id`) ON DELETE SET NULL;
+ALTER TABLE `reviews`          ADD CONSTRAINT `fk_rev_product`       FOREIGN KEY (`product_id`)              REFERENCES `products`(`id`) ON DELETE CASCADE;
+ALTER TABLE `reviews`          ADD CONSTRAINT `fk_rev_customer`      FOREIGN KEY (`customer_id`)             REFERENCES `customers`(`id`) ON DELETE CASCADE;
+ALTER TABLE `reviews`          ADD CONSTRAINT `fk_rev_order`         FOREIGN KEY (`order_id`)               REFERENCES `orders`(`id`) ON DELETE SET NULL;
+ALTER TABLE `wishlist`         ADD CONSTRAINT `fk_wish_customer`     FOREIGN KEY (`customer_id`)            REFERENCES `customers`(`id`) ON DELETE CASCADE;
+ALTER TABLE `wishlist`         ADD CONSTRAINT `fk_wish_product`      FOREIGN KEY (`product_id`)             REFERENCES `products`(`id`) ON DELETE CASCADE;
+ALTER TABLE `wallet_transactions` ADD CONSTRAINT `fk_wt_customer`   FOREIGN KEY (`customer_id`)            REFERENCES `customers`(`id`) ON DELETE CASCADE;
+ALTER TABLE `loyalty_points`   ADD CONSTRAINT `fk_lp_customer`       FOREIGN KEY (`customer_id`)            REFERENCES `customers`(`id`) ON DELETE CASCADE;
+ALTER TABLE `referrals`        ADD CONSTRAINT `fk_ref_referrer`      FOREIGN KEY (`referrer_customer_id`)   REFERENCES `customers`(`id`) ON DELETE CASCADE;
+ALTER TABLE `referrals`        ADD CONSTRAINT `fk_ref_referred`      FOREIGN KEY (`referred_customer_id`)   REFERENCES `customers`(`id`) ON DELETE SET NULL;
+ALTER TABLE `flash_deals`      ADD CONSTRAINT `fk_fd_product`        FOREIGN KEY (`product_id`)             REFERENCES `products`(`id`) ON DELETE CASCADE;
+ALTER TABLE `attendance`       ADD CONSTRAINT `fk_att_employee`      FOREIGN KEY (`employee_id`)            REFERENCES `employees`(`id`) ON DELETE CASCADE;
+ALTER TABLE `leave_requests`   ADD CONSTRAINT `fk_lr_employee`       FOREIGN KEY (`employee_id`)            REFERENCES `employees`(`id`) ON DELETE CASCADE;
+ALTER TABLE `inventory_items`  ADD CONSTRAINT `fk_inv_supplier`      FOREIGN KEY (`supplier_id`)            REFERENCES `suppliers`(`id`) ON DELETE SET NULL;
+ALTER TABLE `inventory_transactions` ADD CONSTRAINT `fk_it_item`    FOREIGN KEY (`item_id`)                REFERENCES `inventory_items`(`id`) ON DELETE CASCADE;
 
 -- ============================================================
 -- DEFAULT DATA
