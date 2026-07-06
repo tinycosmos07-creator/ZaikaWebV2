@@ -99,16 +99,7 @@ if ($method === 'POST') {
             ]);
         }
 
-        default:
-            json_response(['success'=>false,'message'=>'Unknown action'], 400);
-    }
-}
-
-if ($method === 'POST') {
-    $action = input('action', '');
-
-    // Forgot password — stores a reset token, emails it (or just returns it in dev mode)
-    if ($action === 'forgot_password') {
+        case 'forgot_password': {
         $email = strtolower(trim(input('email', '')));
         if (!$email) json_response(['success'=>false,'message'=>'Email required'], 422);
         try {
@@ -135,7 +126,7 @@ if ($method === 'POST') {
         json_response(['success'=>true,'message'=>'If that email exists, a reset link has been sent.']);
     }
 
-    if ($action === 'reset_password') {
+        case 'reset_password': {
         $token    = input('token', '');
         $password = input('password', '');
         if (!$token || strlen($password) < 6) json_response(['success'=>false,'message'=>'Token and new password (min 6 chars) required'], 422);
@@ -151,6 +142,10 @@ if ($method === 'POST') {
         } catch (PDOException $e) {
             json_response(['success'=>false,'message'=>'Could not reset password'], 500);
         }
+    }
+
+        default:
+            json_response(['success'=>false,'message'=>'Unknown action'], 400);
     }
 }
 

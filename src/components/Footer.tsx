@@ -1,8 +1,22 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Instagram, Facebook, Twitter, MapPin, Phone, Mail, Clock } from 'lucide-react';
-import { fetchSettings, getRestaurantStatus } from '../lib/settings';
+import { fetchSettings } from '../lib/settings';
 import type { Settings } from '../types';
+
+function getRestaurantStatus(settings: Settings, now: Date): { isOpen: boolean; label: string } {
+  const hours = settings.opening_hours || '11:00 AM - 11:00 PM';
+  const match = hours.match(/(\d+):(\d+)\s*(AM|PM)\s*-\s*(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return { isOpen: true, label: 'Open Now' };
+  const [, sh, sm, sap, eh, em, eap] = match;
+  let startH = parseInt(sh) % 12; if (sap.toUpperCase() === 'PM') startH += 12;
+  let endH = parseInt(eh) % 12; if (eap.toUpperCase() === 'PM') endH += 12;
+  const currentMin = now.getHours() * 60 + now.getMinutes();
+  const startTotal = startH * 60 + parseInt(sm);
+  const endTotal = endH * 60 + parseInt(em);
+  const isOpen = currentMin >= startTotal && currentMin < endTotal;
+  return { isOpen, label: isOpen ? 'Open Now' : 'Closed' };
+}
 
 export default function Footer() {
   const [clickCount, setClickCount] = useState(0);
